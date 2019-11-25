@@ -2,17 +2,20 @@
 
 set -Eeuo pipefail
 
+
 if [ "${DEBUG:-}" != "" ] ; then
     set -x
 fi
 
-
+export AWS_PROFILE=${AWS_PROFILE:-martin.virtel@dpa-info.com}
+export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-central-1}
+export ACCOUNT_ID=$(aws sts get-caller-identity | jq -r .Account)
 
 function get-data() {
 
-local days="${1:-2}"
+local days="${1:-1}"
 
-local yesterday=$(date -d "1 day ago" '+%Y-%m-%d')
+local yesterday=$(date -d "0 day ago" '+%Y-%m-%d')
 local daybefore=$(date -d "$days day ago" '+%Y-%m-%d')
 
 aws ce get-cost-and-usage  \
@@ -25,10 +28,11 @@ aws ce get-cost-and-usage  \
 
 function transform() {
   jq -r  '[ .ResultsByTime[] | 
-          .TimePeriod.Start as $sdate | 
+          .TimePeriod.Start as $sdate |
+          "'$ACCOUNT_ID'" as $account | 
           .Groups[] |  
-          [ $sdate, .Keys[], (.Metrics.UnblendedCost.Amount | tonumber) ] 
-          ] | sort_by([ .[1], .[0], .[1] ]) | reverse | .[] | @csv' 
+          [ $account, $sdate, .Keys[], (.Metrics.UnblendedCost.Amount | tonumber) ] 
+          ] | sort_by([ .[2], .[1], .[2] ]) | reverse | .[] | @csv' 
 }
 
 
@@ -72,6 +76,9 @@ while [[ "$#" -gt 0 ]]; do case $1 in
      ;;
 	 csv)
 		get-data $days | transform
+     ;;
+     me)
+        aws sts get-caller-identity
      ;;
 esac; shift; done
 
