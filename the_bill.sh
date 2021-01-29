@@ -7,16 +7,24 @@ if [ "${DEBUG:-}" != "" ] ; then
     set -x
 fi
 
-export AWS_PROFILE=${AWS_PROFILE:-martin.virtel@dpa-info.com}
-export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-central-1}
 export ACCOUNT_ID=$(aws sts get-caller-identity | jq -r .Account)
 
 function get-data() {
 
 local days="${1:-1}"
 
-local yesterday=$(date -d "0 day ago" '+%Y-%m-%d')
-local daybefore=$(date -d "$days day ago" '+%Y-%m-%d')
+DATECMD=date
+if [ `uname -s` = 'Darwin' ]; then
+    DATECMD=gdate
+    if [ "`which $DATECMD`" = "" ]; then
+        echo "You don't have GNU 'date' command."
+        echo "You should brew install coreutils"
+        exit 64
+    fi
+fi
+
+local yesterday=$($DATECMD -d "0 day ago" '+%Y-%m-%d')
+local daybefore=$($DATECMD -d "$days day ago" '+%Y-%m-%d')
 
 aws ce get-cost-and-usage  \
     --time-period Start=$daybefore,End=$yesterday \
