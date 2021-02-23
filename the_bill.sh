@@ -25,12 +25,14 @@ fi
 
 local yesterday=$($DATECMD -d "0 day ago" '+%Y-%m-%d')
 local daybefore=$($DATECMD -d "$days day ago" '+%Y-%m-%d')
+local script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )
 
 aws ce get-cost-and-usage  \
     --time-period Start=$daybefore,End=$yesterday \
     --granularity=DAILY \
     --group-by Type=DIMENSION,Key=SERVICE \
-    --metrics=UNBLENDED_COST 
+    --metrics=UNBLENDED_COST \
+    --filter file://$script_dir/filters.json
 }
 
 
