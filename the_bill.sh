@@ -32,7 +32,7 @@ aws ce get-cost-and-usage  \
     --granularity=DAILY \
     --group-by Type=DIMENSION,Key=SERVICE \
     --metrics=UNBLENDED_COST \
-    --filter file://$script_dir/filters.json
+    --filter file://$script_dir/credit_filters.json
 }
 
 
